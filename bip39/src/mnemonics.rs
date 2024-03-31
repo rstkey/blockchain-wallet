@@ -1,5 +1,5 @@
+use crate::utils;
 use crate::wordlist::*;
-use crate::{hasher, random, wordlist};
 use anyhow::{ensure, Context as _, Result};
 use hmac::Hmac;
 use sha2::Sha512;
@@ -36,8 +36,8 @@ impl Mnemonic {
             let mut buf = [0; 64];
             let (seed, hash) = buf.split_at_mut(len);
 
-            random::get_random_bytes(&mut *seed)?;
-            hash[..32].copy_from_slice(&hasher::sha256(seed));
+            utils::get_random_bytes(&mut *seed)?;
+            hash[..32].copy_from_slice(&utils::sha256(seed));
 
             buf
         };
@@ -59,7 +59,7 @@ impl Mnemonic {
 
         let len = mnemonic_to_byte_length(words.len())?;
         let buffer = {
-            let wordlist = wordlist::Wordlist::new_english();
+            let wordlist = Wordlist::new_english();
 
             let mut buf = [0; 64];
             let (seed, hash) = buf.split_at_mut(len);
@@ -86,7 +86,7 @@ impl Mnemonic {
             debug_assert_eq!(len * 8 + bit_offset, words.len() * WORD_BITS);
             debug_assert_eq!(byte_offset, len);
 
-            hash[..32].copy_from_slice(&hasher::sha256(seed));
+            hash[..32].copy_from_slice(&utils::sha256(seed));
 
             let checksum_mask = (1 << bit_offset) - 1;
             ensure!(
@@ -106,7 +106,7 @@ impl Mnemonic {
 
     /// Returns the BIP-0039 mnemonic phrase.
     pub fn to_phrase(&self) -> String {
-        let wordlist = wordlist::Wordlist::new_english();
+        let wordlist = Wordlist::new_english();
         let separator = ' ';
 
         let mut buf = String::new();
@@ -130,21 +130,23 @@ impl Mnemonic {
         buf
     }
 
-    /// Gets the PBKDF2 stretched binary seed for this mnemonic.
-    pub fn seed(&self, password: impl AsRef<str>) -> Seed {
-        const ROUNDS: u32 = 2048;
+    /// Gets the PBKDF2 stretched binary seed.
+    pub fn to_seed(&self, password: impl AsRef<str>) -> Seed {
+        const PBKDF2_ROUNDS: u32 = 2048;
+        const PBKDF2_BYTES: usize = 64;
 
-        let mut buf = [0; 64];
+        let mut seed = [0; PBKDF2_BYTES];
         let salt = format!("mnemonic{}", password.as_ref());
+
         pbkdf2::pbkdf2::<Hmac<Sha512>>(
             self.to_phrase().as_bytes(),
             salt.nfkd().to_string().as_bytes(),
-            ROUNDS,
-            &mut buf,
+            PBKDF2_ROUNDS,
+            &mut seed,
         )
         .expect("HMAC can be initialized with any key length");
 
-        Seed(buf)
+        Seed(seed)
     }
 
     pub fn as_bytes(&self) -> &[u8] {
@@ -206,10 +208,18 @@ fn mnemonic_to_byte_length(len: usize) -> Result<usize> {
     Ok((len * WORD_BITS * 32 / 33) / 8)
 }
 
+///  TODO: use this function
+// #[inline]
+// fn normalize_utf8(s: &mut Cow<'_, str>) {
+//     use unicode_normalization::{is_nfkd_quick, IsNormalized, UnicodeNormalization};
+//     if is_nfkd_quick(s.as_ref().chars()) != IsNormalized::Yes {
+//         *s = Cow::Owned(s.as_ref().nfkd().to_string())
+//     }
+// }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Test
 ///////////////////////////////////////////////////////////////////////////////
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -285,7 +295,7 @@ mod tests {
         ] {
             let mnemonic = Mnemonic::from_phrase(phrase).unwrap();
             assert_eq!(mnemonic.as_bytes(), bytes);
-            assert_eq!(*mnemonic.seed(password), seed);
+            assert_eq!(*mnemonic.to_seed(password), seed);
             assert_eq!(mnemonic.to_phrase(), phrase);
         }
     }

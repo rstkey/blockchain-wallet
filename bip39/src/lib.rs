@@ -1,4 +1,3 @@
-mod hasher;
 pub mod mnemonics;
-mod random;
+mod utils;
 mod wordlist;
