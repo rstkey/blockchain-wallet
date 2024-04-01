@@ -1,31 +1,30 @@
 pub mod encryption;
 pub mod kdf;
 pub mod mac;
-mod utils;
+use kdf::{Kdf, ScryptKdf};
+use utils;
 
 use encryption::Cipher;
-use kdf::Kdf;
 
 pub struct EncryptedAccount {
     cipher: Cipher,
     ciphertext: Vec<u8>,
-    kdf: Kdf,
-    mac: String,
+    kdf: kdf::Kdf<ScryptKdf>,
+    mac: [u8; 32],
 }
 
-impl EncryptedAccount {
-    pub fn new(private_key: &str, password: &str) -> Self {
-        let kdf = Kdf::new_scrypt();
-        let cipher = Cipher::new_aes128_ctr();
+impl<'a> EncryptedAccount {
+    pub fn encrypt(private_key: &str, password: &str) -> Self {
+        let kdf = Kdf::new();
+        let cipher = Cipher::new_aes128_ctr(); // 16 bytes key
 
-        let derived_key = kdf.derive_key(password).unwrap();
-        let derived_key_clone = derived_key.clone(); // Clone the derived_key
-        let ciphertext = cipher.encrypt(derived_key.into_bytes(), private_key.as_bytes());
+        let derived_key = kdf.derive(password).unwrap(); // 32 bytes
+        let ciphertext = cipher.encrypt(
+            derived_key[0..16].as_bytes().to_vec(),
+            private_key.as_bytes(),
+        ); // encrypt only use the first 16 bytes
 
-        let mac = String::from_utf8_lossy(
-            mac::compute_hmac(derived_key_clone.into_bytes().as_ref(), &ciphertext).as_ref(),
-        )
-        .to_string();
+        let mac = mac::compute_hmac(derived_key[16..33].as_bytes(), &ciphertext);
 
         Self {
             cipher,
@@ -36,14 +35,19 @@ impl EncryptedAccount {
     }
 
     pub fn decrypt(&self, password: &str) -> Result<String, anyhow::Error> {
-        self.kdf
-            .verify_password(password, &self.mac)
-            .expect("Invalid password");
+        let derived_key = self.kdf.derive(password).unwrap();
 
-        let derived_key = self.kdf.derive_key(password).unwrap();
+        // Compute the MAC over the ciphertext and the second half of the derived key
+        let mac_check = mac::compute_hmac(&derived_key[16..33].as_bytes(), &self.ciphertext);
+
+        // Verify the MAC
+        if mac_check != self.mac {
+            return Err(anyhow::anyhow!("MAC verification failed"));
+        }
+
         let decrypted = self
             .cipher
-            .decrypt(derived_key.into_bytes(), &self.ciphertext)
+            .decrypt(derived_key[0..16].as_bytes().to_vec(), &self.ciphertext)
             .expect("Decryption error");
 
         Ok(String::from_utf8(decrypted)?)
@@ -60,7 +64,8 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt_account() {
         // Create a new encrypted account
-        let account = EncryptedAccount::new(PRIVATE_KEY, PASSWORD);
+        let account = EncryptedAccount::encrypt(PRIVATE_KEY, PASSWORD);
+        println!("Done encrypting account");
 
         // Decrypt the account
         let decrypted = account.decrypt(PASSWORD);

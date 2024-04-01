@@ -1,52 +1,26 @@
 mod scrypt;
-pub use scrypt::{derive, verify, ScryptKdfParams};
+pub use scrypt::*;
 
-pub enum Kdf {
-    Scrypt(ScryptKdfParams),
+pub trait DerivationFunction {
+    fn new() -> Self;
+    fn derive(&self, password: &str) -> Result<String, anyhow::Error>;
+    fn verify(&self, password: &str, password_hash: &str) -> Result<(), anyhow::Error>;
 }
 
-impl Kdf {
-    pub fn new_scrypt() -> Self {
-        Kdf::Scrypt(ScryptKdfParams::default())
-    }
+pub struct Kdf<T: DerivationFunction> {
+    kdf: T,
 }
 
-impl Kdf {
-    pub fn derive_key(&self, password: &str) -> Result<String, anyhow::Error> {
-        match self {
-            Kdf::Scrypt(params) => derive(password, params),
-        }
+impl<T: DerivationFunction> Kdf<T> {
+    pub fn new() -> Self {
+        Self { kdf: T::new() }
     }
 
-    pub fn verify_password(
-        &self,
-        password: &str,
-        password_hash: &str,
-    ) -> Result<(), anyhow::Error> {
-        match self {
-            Kdf::Scrypt(_) => verify(password, password_hash),
-        }
+    pub fn derive(&self, password: &str) -> Result<String, anyhow::Error> {
+        self.kdf.derive(password)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const PASSWORD: &str = "randompassword";
-
-    #[test]
-    fn test_derive_verify_password() {
-        // Create a new Kdf::Scrypt
-        let kdf = Kdf::new_scrypt();
-
-        // Derive a key from the password
-        let derived_key = kdf.derive_key(PASSWORD);
-
-        // Verify the password against the derived key
-        let result = kdf.verify_password(PASSWORD, derived_key.unwrap().as_str());
-
-        // The password should be verified successfully
-        assert!(result.is_ok());
+    pub fn verify(&self, password: &str, password_hash: &str) -> Result<(), anyhow::Error> {
+        self.kdf.verify(password, password_hash)
     }
 }

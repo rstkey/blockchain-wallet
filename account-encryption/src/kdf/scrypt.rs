@@ -1,7 +1,9 @@
 use scrypt::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{PasswordHash, PasswordVerifier},
     Params, Scrypt,
 };
+
+use super::DerivationFunction;
 
 #[allow(dead_code)]
 pub struct ScryptKdfParams {
@@ -9,32 +11,44 @@ pub struct ScryptKdfParams {
     n: u8,
     p: u32,
     r: u32,
-    salt: SaltString,
+    salt: [u8; 0],
 }
 
-impl Default for ScryptKdfParams {
+impl<'a> Default for ScryptKdfParams {
+    // The default setting following the backup implementation of trust wallet.
     fn default() -> Self {
         Self {
-            dklen: Params::RECOMMENDED_LEN, // TODO: check this. i use recommended because it's 32. the trust wallet use that. but need to check because aes128 use 16.
-            n: Params::RECOMMENDED_LOG_N,
-            p: Params::RECOMMENDED_P,
-            r: Params::RECOMMENDED_R,
-            salt: SaltString::generate(&mut OsRng),
+            dklen: 32,
+            n: 14,
+            p: 4,
+            r: 8,
+            salt: [0u8; 0],
         }
     }
 }
 
-pub fn derive(password: &str, params: &ScryptKdfParams) -> Result<String, anyhow::Error> {
-    // TODO: use the full params to hash the password
+pub struct ScryptKdf(ScryptKdfParams);
 
-    let password_hash = Scrypt.hash_password(password.as_bytes(), &params.salt)?;
-    Ok(password_hash.to_string())
-}
+impl DerivationFunction for ScryptKdf {
+    fn new() -> Self {
+        Self(ScryptKdfParams::default())
+    }
+    fn derive(&self, password: &str) -> Result<String, anyhow::Error> {
+        let scrypt_params = Params::new(self.0.n, self.0.r, self.0.p, self.0.dklen)
+            .map_err(|e| anyhow::Error::msg(e.to_string()))?;
 
-pub fn verify(password: &str, password_hash: &str) -> Result<(), anyhow::Error> {
-    let parsed_hash = PasswordHash::new(password_hash)?;
-    Scrypt.verify_password(password.as_bytes(), &parsed_hash)?;
-    Ok(())
+        let mut dk = vec![0u8; self.0.dklen];
+        scrypt::scrypt(password.as_bytes(), &self.0.salt, &scrypt_params, &mut dk)
+            .map_err(|e| anyhow::Error::msg(e.to_string()))?;
+
+        Ok(String::from_utf8_lossy(&dk).to_string())
+    }
+
+    fn verify(&self, password: &str, password_hash: &str) -> Result<(), anyhow::Error> {
+        let parsed_hash = PasswordHash::new(password_hash)?;
+        Scrypt.verify_password(password.as_bytes(), &parsed_hash)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -44,24 +58,24 @@ mod tests {
     #[test]
     fn test_derive_and_verify_password() {
         let password = "my_password";
-        let params = ScryptKdfParams::default();
+        let hasher = ScryptKdf::new();
 
         // Derive password hash
-        let password_hash = derive(password, &params).unwrap();
+        let password_hash = hasher.derive(password).unwrap();
 
         // Verify password
-        verify(password, &password_hash).unwrap();
+        assert!(hasher.verify(password, &password_hash).is_ok());
     }
 
     #[test]
     fn test_derive_with_incorrect_password() {
         let password = "wrong_password";
-        let params = ScryptKdfParams::default();
+        let hasher = ScryptKdf::new();
 
         // Derive password hash
-        let password_hash = derive("my_password", &params).unwrap();
+        let password_hash = hasher.derive("my_password").unwrap();
 
         // Verify incorrect password
-        assert!(verify(password, &password_hash).is_err());
+        assert!(hasher.verify(password, &password_hash).is_err());
     }
 }

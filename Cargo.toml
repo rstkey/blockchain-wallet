@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = ["account", "account-encryption", "bip39", "utils"]

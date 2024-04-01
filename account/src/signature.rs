@@ -39,9 +39,6 @@ impl Signature {
     }
 
     /// Creates a signature from its raw parts.
-    ///
-    /// # Panics
-    ///
     /// Panics on invalid signature parts.
     pub fn from_parts(r: [u8; 32], s: [u8; 32], y_parity: u8) -> Self {
         Self(

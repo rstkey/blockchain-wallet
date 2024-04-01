@@ -7,9 +7,9 @@ use k256::{
 };
 use sha2::Sha256;
 use std::fmt::{self, Debug, Formatter};
+use utils;
 
 mod signature;
-mod utils;
 
 //////////////////////////////////
 /// Public Key
@@ -52,7 +52,7 @@ impl PrivateKey {
     pub fn address(&self) -> Address {
         let encoded = self.public().encode_uncompressed();
 
-        // NOTE: An ethereum address is the last 20 bytes of the keccak hash of
+        // Ethereum address is the last 20 bytes of the keccak hash of
         // the concatenated elliptic curve coordinates of the public key. Note
         // that an encoded uncompressed public key is serialized into 65 bytes
         // where the first byte is a SEC1 tag that is always 0x04 (representing
@@ -98,7 +98,7 @@ mod tests {
         hex!("4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d");
 
     #[test]
-    fn ganache_determinitic_address() {
+    fn deterministic_address() {
         let key = PrivateKey::from_secret(DETERMINISTIC_PRIVATE_KEY).unwrap();
         assert_eq!(
             *key.address(),
@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn ganache_deterministic_signature() {
+    fn deterministic_signature() {
         let key = PrivateKey::from_secret(DETERMINISTIC_PRIVATE_KEY).unwrap();
         let message = utils::keccak256(b"\x19Ethereum Signed Message:\n12Hello World!");
         assert_eq!(
