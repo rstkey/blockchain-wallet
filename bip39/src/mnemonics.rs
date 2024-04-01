@@ -1,4 +1,3 @@
-use crate::utils;
 use crate::wordlist::*;
 use anyhow::{ensure, Context as _, Result};
 use hmac::Hmac;
@@ -11,6 +10,7 @@ use std::{
     str::FromStr,
 };
 use unicode_normalization::UnicodeNormalization as _;
+use utils;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mnemonic
