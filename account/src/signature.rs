@@ -14,7 +14,6 @@ pub struct Signature(pub ecdsa::Signature, pub RecoveryId);
 
 impl Signature {
     /// Returns the y-parity in its 256-bit integer representation.
-    ///
     /// Return 0 for even parity, and 1 for odd parity.
     pub fn y_parity(&self) -> U256 {
         u8::from(self.1.is_y_odd()).as_u256()

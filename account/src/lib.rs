@@ -1,39 +1,20 @@
 use anyhow::Result;
 use ethaddr::Address;
-use k256::elliptic_curve::sec1::ToEncodedPoint as _;
-use k256::{
-    ecdsa::{hazmat::SignPrimitive, SigningKey},
-    SecretKey,
-};
 use sha2::Sha256;
 use std::fmt::{self, Debug, Formatter};
 use utils;
 
+// secp256k1 elliptic curve library with support for ECDSA signing/verification/public-key recovery
+use k256::{
+    ecdsa::{hazmat::SignPrimitive, SigningKey},
+    elliptic_curve::sec1::ToEncodedPoint as _,
+    PublicKey, SecretKey,
+};
+
 mod signature;
+use signature::Signature;
 
-//////////////////////////////////
-/// Public Key
-//////////////////////////////////
-
-/// A public key.
-pub struct PublicKey(pub k256::PublicKey);
-
-impl PublicKey {
-    /// Returns an uncompressed encoded bytes for the public key.
-    pub fn encode_uncompressed(&self) -> [u8; 65] {
-        self.0
-            .to_encoded_point(false)
-            .as_bytes()
-            .try_into()
-            .expect("unexpected uncompressed private key length")
-    }
-}
-
-//////////////////////////////////
-/// Private Key
-//////////////////////////////////
-
-/// A struct representing an Ethereum private key.
+/// Represents an Ethereum private key.
 pub struct PrivateKey(SecretKey);
 
 impl PrivateKey {
@@ -45,12 +26,22 @@ impl PrivateKey {
 
     /// Returns the public key for the private key.
     pub fn public(&self) -> PublicKey {
-        PublicKey(self.0.public_key())
+        self.0.public_key()
+    }
+
+    /// Returns an uncompressed encoded bytes for the public key.
+    pub fn public_encode_uncompressed(&self) -> [u8; 65] {
+        self.0
+            .public_key()
+            .to_encoded_point(false)
+            .as_bytes()
+            .try_into()
+            .expect("unexpected uncompressed private key length")
     }
 
     /// Returns the public address for the private key.
     pub fn address(&self) -> Address {
-        let encoded = self.public().encode_uncompressed();
+        let encoded = self.public_encode_uncompressed();
 
         // Ethereum address is the last 20 bytes of the keccak hash of
         // the concatenated elliptic curve coordinates of the public key. Note
@@ -69,17 +60,12 @@ impl PrivateKey {
         self.0.to_bytes().into()
     }
 
-    /// Generate a signature for the specified message.
-    pub fn sign(&self, message: [u8; 32]) -> signature::Signature {
-        self.try_sign(message).expect("signature operation failed")
-    }
-
-    /// Generate a signature for the specified message.
-    pub fn try_sign(&self, message: [u8; 32]) -> Result<signature::Signature> {
+    /// Generate a signature for the specified message. Message is a 32-byte hash.
+    pub fn sign(&self, message: [u8; 32]) -> Result<Signature> {
         let (signature, recovery_id) = SigningKey::from(&self.0)
             .as_nonzero_scalar()
             .try_sign_prehashed_rfc6979::<Sha256>(&message.into(), b"")?;
-        Ok(signature::Signature(signature, recovery_id.unwrap()))
+        Ok(Signature(signature, recovery_id.unwrap()))
     }
 }
 
@@ -94,12 +80,13 @@ mod tests {
     use super::*;
     use hex_literal::hex;
 
-    pub const DETERMINISTIC_PRIVATE_KEY: [u8; 32] =
+    pub const PRIVATE_KEY: [u8; 32] =
         hex!("4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d");
 
     #[test]
     fn deterministic_address() {
-        let key = PrivateKey::from_secret(DETERMINISTIC_PRIVATE_KEY).unwrap();
+        let key = PrivateKey::from_secret(PRIVATE_KEY).unwrap();
+        println!("{:?}", key);
         assert_eq!(
             *key.address(),
             hex!("90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"),
@@ -108,15 +95,14 @@ mod tests {
 
     #[test]
     fn deterministic_signature() {
-        let key = PrivateKey::from_secret(DETERMINISTIC_PRIVATE_KEY).unwrap();
+        let key = PrivateKey::from_secret(PRIVATE_KEY).unwrap();
         let message = utils::keccak256(b"\x19Ethereum Signed Message:\n12Hello World!");
-        assert_eq!(
-            key.sign(message),
-            signature::Signature::from_parts(
-                hex!("408790f153cbfa2722fc708a57d97a43b24429724cf060df7c915d468c43bd84"),
-                hex!("61c96aac95ce37d7a31087b6634f4a3ea439a9f704b5c818584fa2a32fa83859"),
-                1,
-            ),
+        let expected_result = Signature::from_parts(
+            hex!("408790f153cbfa2722fc708a57d97a43b24429724cf060df7c915d468c43bd84"),
+            hex!("61c96aac95ce37d7a31087b6634f4a3ea439a9f704b5c818584fa2a32fa83859"),
+            1,
         );
+
+        assert_eq!(key.sign(message).unwrap(), expected_result);
     }
 }
