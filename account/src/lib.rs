@@ -2,7 +2,6 @@ use anyhow::Result;
 use ethaddr::Address;
 use sha2::Sha256;
 use std::fmt::{self, Debug, Formatter};
-use utils;
 
 // secp256k1 elliptic curve library with support for ECDSA signing/verification/public-key recovery
 use k256::{

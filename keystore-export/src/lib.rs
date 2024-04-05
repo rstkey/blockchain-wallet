@@ -2,6 +2,7 @@ use cryptography::encryption::{AesCtr, SymmetricCipher};
 use cryptography::kdf::{scrypt::ScryptKdf, DerivationFunction};
 use cryptography::mac;
 
+// TODO: json encode/decode to file
 pub struct EncryptedAccount {
     cipher: AesCtr,
     ciphertext: Vec<u8>,

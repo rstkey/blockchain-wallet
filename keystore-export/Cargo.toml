@@ -1,5 +1,5 @@
 [package]
-name = "account-encryption"
+name = "keystore-export"
 version = "0.1.0"
 edition = "2021"
 authors = ["Dimas Tri Mustakim <tridims31@gmail.com>"]

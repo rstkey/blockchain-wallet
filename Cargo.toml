@@ -1,5 +1,5 @@
 [workspace]
 resolver = "2"
-members = ["account", "account-encryption", "bip39", "cryptography", "utils"]
+members = ["account", "keystore-export", "bip39", "cryptography", "utils"]
 
 package.authors = ["Dimas Tri Mustakim <tridims31@gmail.com>"]

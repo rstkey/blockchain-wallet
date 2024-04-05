@@ -3,18 +3,12 @@ use anyhow::{ensure, Context as _, Result};
 use hmac::Hmac;
 use sha2::Sha512;
 use std::{
-    convert::TryInto,
     fmt::{self, Display, Formatter},
     mem,
     ops::Deref,
     str::FromStr,
 };
 use unicode_normalization::UnicodeNormalization as _;
-use utils;
-
-///////////////////////////////////////////////////////////////////////////////
-// Mnemonic
-///////////////////////////////////////////////////////////////////////////////
 
 pub struct Mnemonic {
     buffer: [u8; 64],
