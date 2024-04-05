@@ -2,6 +2,8 @@
 name = "cryptography"
 version = "0.1.0"
 edition = "2021"
+authors = ["Dimas Tri Mustakim <tridims31@gmail.com>"]
+description = "Cryptography Utilities for My HDWallet Project"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
