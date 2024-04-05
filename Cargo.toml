@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["account", "account-encryption", "bip39", "utils"]
+members = ["account", "account-encryption", "bip39", "cryptography", "utils"]

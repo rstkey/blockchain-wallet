@@ -1,30 +1,26 @@
-pub mod encryption;
-pub mod kdf;
-pub mod mac;
-use kdf::{Kdf, ScryptKdf};
-use utils;
-
-use encryption::Cipher;
+use cryptography::encryption::{AesCtr, SymmetricCipher};
+use cryptography::kdf::{scrypt::ScryptKdf, DerivationFunction};
+use cryptography::mac;
 
 pub struct EncryptedAccount {
-    cipher: Cipher,
+    cipher: AesCtr,
     ciphertext: Vec<u8>,
-    kdf: kdf::Kdf<ScryptKdf>,
+    kdf: ScryptKdf,
     mac: [u8; 32],
 }
 
 impl<'a> EncryptedAccount {
     pub fn encrypt(private_key: &str, password: &str) -> Self {
-        let kdf = Kdf::new();
-        let cipher = Cipher::new_aes128_ctr(); // 16 bytes key
+        let kdf = ScryptKdf::new();
+        let cipher = AesCtr::new(); // 16 bytes key
 
         let derived_key = kdf.derive(password).unwrap(); // 32 bytes
         let ciphertext = cipher.encrypt(
-            derived_key[0..16].as_bytes().to_vec(),
+            derived_key[0..16].as_bytes().try_into().unwrap(),
             private_key.as_bytes(),
         ); // encrypt only use the first 16 bytes
 
-        let mac = mac::compute_hmac(derived_key[16..33].as_bytes(), &ciphertext);
+        let mac = mac::compute_hmac_sha256(derived_key[16..33].as_bytes(), &ciphertext);
 
         Self {
             cipher,
@@ -38,7 +34,7 @@ impl<'a> EncryptedAccount {
         let derived_key = self.kdf.derive(password).unwrap();
 
         // Compute the MAC over the ciphertext and the second half of the derived key
-        let mac_check = mac::compute_hmac(&derived_key[16..33].as_bytes(), &self.ciphertext);
+        let mac_check = mac::compute_hmac_sha256(&derived_key[16..33].as_bytes(), &self.ciphertext);
 
         // Verify the MAC
         if mac_check != self.mac {
@@ -47,7 +43,10 @@ impl<'a> EncryptedAccount {
 
         let decrypted = self
             .cipher
-            .decrypt(derived_key[0..16].as_bytes().to_vec(), &self.ciphertext)
+            .decrypt(
+                derived_key[0..16].as_bytes().try_into().unwrap(),
+                &self.ciphertext,
+            )
             .expect("Decryption error");
 
         Ok(String::from_utf8(decrypted)?)

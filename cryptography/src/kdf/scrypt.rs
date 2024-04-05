@@ -1,9 +1,8 @@
+use super::DerivationFunction;
 use scrypt::{
     password_hash::{PasswordHash, PasswordVerifier},
     Params, Scrypt,
 };
-
-use super::DerivationFunction;
 
 #[allow(dead_code)]
 pub struct ScryptKdfParams {
@@ -33,6 +32,7 @@ impl DerivationFunction for ScryptKdf {
     fn new() -> Self {
         Self(ScryptKdfParams::default())
     }
+
     fn derive(&self, password: &str) -> Result<String, anyhow::Error> {
         let scrypt_params = Params::new(self.0.n, self.0.r, self.0.p, self.0.dklen)
             .map_err(|e| anyhow::Error::msg(e.to_string()))?;
