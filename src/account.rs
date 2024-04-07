@@ -10,6 +10,7 @@ use k256::{
     PublicKey, SecretKey,
 };
 
+use crate::utils;
 mod signature;
 use signature::Signature;
 

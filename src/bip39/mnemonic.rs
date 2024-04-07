@@ -1,4 +1,5 @@
-use crate::wordlist::*;
+use super::wordlist::*;
+use crate::utils;
 use anyhow::{ensure, Context as _, Result};
 use hmac::Hmac;
 use sha2::Sha512;
@@ -10,6 +11,7 @@ use std::{
 };
 use unicode_normalization::UnicodeNormalization as _;
 
+#[derive(Clone)]
 pub struct Mnemonic {
     buffer: [u8; 64],
     len: usize,

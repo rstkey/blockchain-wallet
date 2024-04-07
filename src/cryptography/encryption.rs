@@ -1,4 +1,6 @@
+use crate::utils;
 use aes::cipher::{KeyIvInit, StreamCipher};
+
 type Aes128Ctr64LE = ctr::Ctr64LE<aes::Aes128>;
 
 pub trait SymmetricCipher {
