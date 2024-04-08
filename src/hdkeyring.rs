@@ -1,15 +1,14 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::account::PrivateKey;
+use crate::bip32::{hdk, path::Path};
 use crate::bip39::mnemonic::{Mnemonic, Seed};
-use crate::hdk::{self, Path};
-use ethers::signers::{LocalWallet, Signer};
+use crate::wallet::Wallet;
 
 pub struct HDKeyring {
-    wallets: Vec<PrivateKey>,
+    wallets: Vec<Wallet>,
     mnemonic: Option<Mnemonic>,
-    root: Option<PrivateKey>,
+    root: Option<Wallet>,
 }
 
 impl HDKeyring {

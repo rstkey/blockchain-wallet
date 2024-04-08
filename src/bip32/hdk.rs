@@ -1,9 +1,7 @@
 //! Module implementing the hierachical deterministic key derivation scheme.
 
-mod path;
-
-pub use self::path::{Component, Path};
-use crate::account::PrivateKey;
+pub use super::path::{Component, Path};
+use crate::wallet::Wallet;
 use anyhow::{Context as _, Result};
 use hmac::{Hmac, Mac as _};
 use k256::{elliptic_curve::sec1::ToEncodedPoint as _, SecretKey};
@@ -13,11 +11,11 @@ use sha2::Sha512;
 const HARDENED: u32 = 0x8000_0000;
 
 /// Creates a new extended private key from a seed.
-pub fn derive(seed: impl AsRef<[u8]>, path: &Path) -> Result<PrivateKey> {
+pub fn derive(seed: impl AsRef<[u8]>, path: &Path) -> Result<Wallet> {
     derive_slice(seed.as_ref(), path)
 }
 
-fn derive_slice(seed: &[u8], path: &Path) -> Result<PrivateKey> {
+fn derive_slice(seed: &[u8], path: &Path) -> Result<Wallet> {
     let mut extended_key = {
         let mut hmac = Hmac::<Sha512>::new_from_slice(b"Bitcoin seed")?;
         hmac.update(seed.as_ref());
@@ -53,7 +51,7 @@ fn derive_slice(seed: &[u8], path: &Path) -> Result<PrivateKey> {
         extended_key = child_key
     }
 
-    PrivateKey::from_secret(&extended_key[..32])
+    Wallet::from_secret(&extended_key[..32])
 }
 
 #[cfg(test)]
@@ -62,12 +60,12 @@ mod tests {
     use crate::bip39::mnemonic::Mnemonic;
     use ethaddr::address;
 
-    const DETERMINISTIC_MNEMONIC: &str =
+    const MNEMONIC: &str =
         "myth like bonus scare over problem client lizard pioneer submit female collect";
 
     #[test]
     fn ganache_deterministic_mnemonic() {
-        let mnemonic = DETERMINISTIC_MNEMONIC.parse::<Mnemonic>().unwrap();
+        let mnemonic = MNEMONIC.parse::<Mnemonic>().unwrap();
         let path = "m/44'/60'/0'/0/0".parse::<Path>().unwrap();
 
         let account = derive(mnemonic.to_seed(""), &path).unwrap();

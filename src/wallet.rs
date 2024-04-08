@@ -12,16 +12,16 @@ use k256::{
 
 use crate::utils;
 mod signature;
-use signature::Signature;
+pub use signature::Signature;
 
 /// Represents an Ethereum private key.
-pub struct PrivateKey(SecretKey);
+pub struct Wallet(SecretKey);
 
-impl PrivateKey {
+impl Wallet {
     /// Creates a new private key from a secret.
     pub fn from_secret(secret: impl AsRef<[u8]>) -> Result<Self> {
         let key = SecretKey::from_slice(secret.as_ref())?;
-        Ok(PrivateKey(key))
+        Ok(Wallet(key))
     }
 
     /// Returns the public key for the private key.
@@ -50,7 +50,7 @@ impl PrivateKey {
         // an uncompressed point) and the subsequent bytes are the coordinates
         // we want. So discard the first byte for the address calculation.
         debug_assert_eq!(encoded[0], 0x04);
-        let hash = utils::keccak256(&encoded[1..]);
+        let hash = utils::hash::keccak256(&encoded[1..]);
 
         Address::from_slice(&hash[12..])
     }
@@ -69,7 +69,7 @@ impl PrivateKey {
     }
 }
 
-impl Debug for PrivateKey {
+impl Debug for Wallet {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.debug_tuple("PrivateKey").field(&self.address()).finish()
     }
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn deterministic_address() {
-        let key = PrivateKey::from_secret(PRIVATE_KEY).unwrap();
+        let key = Wallet::from_secret(PRIVATE_KEY).unwrap();
         println!("{:?}", key);
         assert_eq!(
             *key.address(),
@@ -95,8 +95,8 @@ mod tests {
 
     #[test]
     fn deterministic_signature() {
-        let key = PrivateKey::from_secret(PRIVATE_KEY).unwrap();
-        let message = utils::keccak256(b"\x19Ethereum Signed Message:\n12Hello World!");
+        let key = Wallet::from_secret(PRIVATE_KEY).unwrap();
+        let message = utils::hash::keccak256(b"\x19Ethereum Signed Message:\n12Hello World!");
         let expected_result = Signature::from_parts(
             hex!("408790f153cbfa2722fc708a57d97a43b24429724cf060df7c915d468c43bd84"),
             hex!("61c96aac95ce37d7a31087b6634f4a3ea439a9f704b5c818584fa2a32fa83859"),

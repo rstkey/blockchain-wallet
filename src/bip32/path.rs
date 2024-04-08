@@ -18,6 +18,11 @@ impl Path {
         format!("m/44'/60'/0'/0/{index}").parse().unwrap()
     }
 
+    /// Creates a new path from path string.
+    pub fn from_path(path: &str) -> Self {
+        path.parse().unwrap()
+    }
+
     /// Returns an iterator over the path components.
     pub fn components(&self) -> impl Iterator<Item = Component> + '_ {
         self.components.iter().copied()
