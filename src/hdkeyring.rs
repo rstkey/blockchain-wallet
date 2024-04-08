@@ -6,13 +6,10 @@ use crate::bip39::mnemonic::{Mnemonic, Seed};
 use crate::hdk::{self, Path};
 use ethers::signers::{LocalWallet, Signer};
 
-const DEFAULT_HD_PATH: &str = "m/44'/60'/0'/0";
-
 pub struct HDKeyring {
     wallets: Vec<PrivateKey>,
     mnemonic: Option<Mnemonic>,
     root: Option<PrivateKey>,
-    hd_path: &'static str,
 }
 
 impl HDKeyring {
@@ -21,7 +18,6 @@ impl HDKeyring {
             wallets: Vec::new(),
             mnemonic: None,
             root: None,
-            hd_path: DEFAULT_HD_PATH,
         }
     }
 

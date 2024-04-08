@@ -18,7 +18,7 @@ use signature::Signature;
 pub struct PrivateKey(SecretKey);
 
 impl PrivateKey {
-    /// Creates a private key from a secret.
+    /// Creates a new private key from a secret.
     pub fn from_secret(secret: impl AsRef<[u8]>) -> Result<Self> {
         let key = SecretKey::from_slice(secret.as_ref())?;
         Ok(PrivateKey(key))
