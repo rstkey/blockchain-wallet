@@ -5,18 +5,18 @@ mod english;
 
 impl<'a> Wordlist<'a> {
     /// Create a new wordlist.
-    pub fn new_english() -> &'a Self {
+    pub fn new() -> &'a Self {
         &Wordlist(&english::WORDS)
-    }
-
-    /// Search for a word in the wordlist.
-    pub fn search(&self, word: impl AsRef<str>) -> Option<usize> {
-        self.0.binary_search(&word.as_ref()).ok()
     }
 
     /// Get a word from the wordlist.
     pub fn get(&self, index: usize) -> Option<&'a str> {
         self.0.get(index).copied()
+    }
+
+    /// Search for a word in the wordlist.
+    pub fn get_index(&self, word: impl AsRef<str>) -> Option<usize> {
+        self.0.binary_search(&word.as_ref()).ok()
     }
 }
 
@@ -26,10 +26,10 @@ mod tests {
 
     #[test]
     fn test_wordlist() {
-        let wordlist = Wordlist::new_english();
+        let wordlist = Wordlist::new();
 
         let word = "action";
-        assert!(wordlist.search(word).is_some());
+        assert!(wordlist.get_index(word).is_some());
 
         let retrieved = wordlist.get(0).unwrap();
         assert_eq!(retrieved, "abandon");
