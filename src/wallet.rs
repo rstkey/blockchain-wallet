@@ -1,5 +1,6 @@
 use anyhow::Result;
 use ethaddr::Address;
+use serde::Serialize;
 use sha2::Sha256;
 use std::fmt::{self, Debug, Formatter};
 
@@ -9,6 +10,9 @@ use k256::{
     elliptic_curve::sec1::ToEncodedPoint as _,
     PublicKey, SecretKey,
 };
+
+use rand::{CryptoRng, Rng};
+use std::path::Path;
 
 use crate::utils;
 mod signature;
@@ -25,12 +29,12 @@ impl Wallet {
     }
 
     /// Returns the public key for the private key.
-    pub fn public(&self) -> PublicKey {
+    pub fn public_key(&self) -> PublicKey {
         self.0.public_key()
     }
 
     /// Returns an uncompressed encoded bytes for the public key.
-    pub fn public_encode_uncompressed(&self) -> [u8; 65] {
+    pub fn public_key_encoded_uncompressed(&self) -> [u8; 65] {
         self.0
             .public_key()
             .to_encoded_point(false)
@@ -41,7 +45,7 @@ impl Wallet {
 
     /// Returns the public address for the private key.
     pub fn address(&self) -> Address {
-        let encoded = self.public_encode_uncompressed();
+        let encoded = self.public_key_encoded_uncompressed();
 
         // Ethereum address is the last 20 bytes of the keccak hash of
         // the concatenated elliptic curve coordinates of the public key. Note
@@ -66,6 +70,33 @@ impl Wallet {
             .as_nonzero_scalar()
             .try_sign_prehashed_rfc6979::<Sha256>(&message.into(), b"")?;
         Ok(Signature(signature, recovery_id.unwrap()))
+    }
+
+    /// Write the json keystore file to the specified directory.
+    pub fn encrypt_keystore<P, R, B, S>(
+        &self,
+        keypath: P,
+        rng: &mut R,
+        password: S,
+    ) -> Result<String>
+    where
+        P: AsRef<Path>,
+        R: Rng + CryptoRng,
+        B: AsRef<[u8]>,
+        S: AsRef<[u8]>,
+    {
+        let private_key = self.secret();
+        let uuid = crate::keystore::encrypt_key(keypath, rng, private_key, password)?;
+        Ok(uuid)
+    }
+
+    pub fn decrypt_keystore<P, S>(keypath: P, password: S) -> Result<Self>
+    where
+        P: AsRef<Path>,
+        S: AsRef<[u8]>,
+    {
+        let pk = crate::keystore::decrypt_key(keypath, password)?;
+        Ok(Wallet::from_secret(pk)?)
     }
 }
 
