@@ -12,9 +12,10 @@ use serde::Deserialize;
 
 /// An EIP-1559 Ethereum transaction.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     /// The chain ID for the transaction.
-    #[serde(rename = "chainId", with = "ethnum::serde::permissive")]
+    #[serde(with = "ethnum::serde::permissive")]
     pub chain_id: U256,
 
     /// The nonce for the transaction.
@@ -22,11 +23,11 @@ pub struct Transaction {
     pub nonce: U256,
 
     /// The maximum priority fee in Wei for the transaction.
-    #[serde(rename = "maxPriorityFeePerGas", with = "ethnum::serde::permissive")]
+    #[serde(with = "ethnum::serde::permissive")]
     pub max_priority_fee_per_gas: U256,
 
     /// The maximum gas price in Wei for the transaction.
-    #[serde(rename = "maxFeePerGas", with = "ethnum::serde::permissive")]
+    #[serde(with = "ethnum::serde::permissive")]
     pub max_fee_per_gas: U256,
 
     /// The gas limit for the transaction.
@@ -47,7 +48,6 @@ pub struct Transaction {
 
     /// List of addresses and storage keys that the transaction plans to access.
     #[serde(default)]
-    #[serde(rename = "accessList")]
     pub access_list: AccessList,
 }
 

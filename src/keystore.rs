@@ -7,13 +7,12 @@ use aes::{
 use digest::Update;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
-use rand::{CryptoRng, Rng};
 use scrypt::{scrypt, Params as ScryptParams};
 use sha2::Sha256;
 use sha3::{Digest as _, Keccak256};
 use uuid::Uuid;
 
-use crate::utils::address_from_pk;
+use crate::utils::{self, address_from_pk};
 use anyhow::{anyhow, Error};
 use std::{
     fs::File,
@@ -31,19 +30,19 @@ const DEFAULT_KDF_PARAMS_LOG_N: u8 = 13u8;
 const DEFAULT_KDF_PARAMS_R: u32 = 8u32;
 const DEFAULT_KDF_PARAMS_P: u32 = 1u32;
 
-pub fn new<P, R, S>(dir: P, rng: &mut R, password: S) -> Result<(Vec<u8>, String), Error>
-where
-    P: AsRef<Path>,
-    R: Rng + CryptoRng,
-    S: AsRef<[u8]>,
-{
-    // Generate a random private key.
-    let mut pk = vec![0u8; DEFAULT_KEY_SIZE];
-    rng.fill_bytes(pk.as_mut_slice());
+// pub fn new<P, S>(dir: P, password: S) -> Result<(Vec<u8>, String), Error>
+// where
+//     P: AsRef<Path>,
+//     S: AsRef<[u8]>,
+// {
+//     // Generate a random private key.
+//     // let mut pk = vec![0u8; DEFAULT_KEY_SIZE];
+//     // rng.fill_bytes(pk.as_mut_slice());
+//     let pk = utils::generate_salt(DEFAULT_KEY_SIZE);
 
-    let name = encrypt_key(dir, rng, &pk, password)?;
-    Ok((pk, name))
-}
+//     let name = encrypt_key(dir, &pk, password)?;
+//     Ok((pk, name))
+// }
 
 pub fn decrypt_key<P, S>(path: P, password: S) -> Result<Vec<u8>, Error>
 where
@@ -104,16 +103,16 @@ where
     Ok(pk)
 }
 
-pub fn encrypt_key<P, R, B, S>(dir: P, rng: &mut R, pk: B, password: S) -> Result<String, Error>
+pub fn encrypt_key<P, B, S>(dir: P, pk: B, password: S) -> Result<String, Error>
 where
     P: AsRef<Path>,
-    R: Rng + CryptoRng,
     B: AsRef<[u8]>,
     S: AsRef<[u8]>,
 {
     // Generate a random salt.
-    let mut salt = vec![0u8; DEFAULT_KEY_SIZE];
-    rng.fill_bytes(salt.as_mut_slice());
+    // let mut salt = vec![0u8; DEFAULT_KEY_SIZE];
+    // rng.fill_bytes(salt.as_mut_slice());
+    let salt = utils::generate_salt(DEFAULT_KEY_SIZE);
 
     // Derive the key.
     let mut key = vec![0u8; DEFAULT_KDF_PARAMS_DKLEN as usize];
@@ -126,9 +125,9 @@ where
     scrypt(password.as_ref(), &salt, &scrypt_params, key.as_mut_slice())?;
 
     // Encrypt the private key using AES-128-CTR.
-    let mut iv = vec![0u8; DEFAULT_IV_SIZE];
-    rng.fill_bytes(iv.as_mut_slice());
-
+    // let mut iv = vec![0u8; DEFAULT_IV_SIZE];
+    // rng.fill_bytes(iv.as_mut_slice());
+    let iv = utils::generate_salt(DEFAULT_IV_SIZE);
     let encryptor = Aes128Ctr::new(&key[..16], &iv[..16]).expect("invalid length");
 
     let mut ciphertext = pk.as_ref().to_vec();

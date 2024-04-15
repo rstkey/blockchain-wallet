@@ -10,7 +10,6 @@ use k256::{
     PublicKey, SecretKey,
 };
 
-use rand::{CryptoRng, Rng};
 use std::path::Path;
 
 use crate::utils;
@@ -42,6 +41,11 @@ impl Wallet {
             .expect("unexpected uncompressed private key length")
     }
 
+    /// String representation of the public key.
+    pub fn public_key_hex(&self) -> String {
+        hex::encode(self.public_key_encoded_uncompressed())
+    }
+
     /// Returns the public address for the private key.
     pub fn address(&self) -> Address {
         let encoded = self.public_key_encoded_uncompressed();
@@ -71,21 +75,20 @@ impl Wallet {
         Ok(Signature(signature, recovery_id.unwrap()))
     }
 
+    /// Sign a message and return the signature.
+    pub fn sign_message(&self, message: &[u8]) -> Result<Signature> {
+        let message = utils::hash::keccak256(message);
+        self.sign(message)
+    }
+
     /// Write the json keystore file to the specified directory.
-    pub fn encrypt_keystore<P, R, B, S>(
-        &self,
-        keypath: P,
-        rng: &mut R,
-        password: S,
-    ) -> Result<String>
+    pub fn encrypt_keystore<P, S>(&self, keypath: P, password: S) -> Result<String>
     where
         P: AsRef<Path>,
-        R: Rng + CryptoRng,
-        B: AsRef<[u8]>,
         S: AsRef<[u8]>,
     {
         let private_key = self.secret();
-        let uuid = crate::keystore::encrypt_key(keypath, rng, private_key, password)?;
+        let uuid = crate::keystore::encrypt_key(keypath, private_key, password)?;
         Ok(uuid)
     }
 

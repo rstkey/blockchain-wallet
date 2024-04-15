@@ -22,8 +22,12 @@ impl Keyring {
         Self::new_from_mnemonic(&mnemonic, password)
     }
 
-    // Todo: create a new wallet (need a derivation function)
-    pub fn new_from_mnemonic(mnemonic: &Mnemonic, password: Option<String>) -> Result<Self> {
+    pub fn new_from_mnemonic_phrase(phrase: &str, password: Option<String>) -> Result<Self> {
+        let mnemonic = Mnemonic::from_phrase(phrase)?;
+        Self::new_from_mnemonic(&mnemonic, password)
+    }
+
+    fn new_from_mnemonic(mnemonic: &Mnemonic, password: Option<String>) -> Result<Self> {
         let password = password.unwrap_or_else(|| "".to_string());
         let seed = mnemonic.to_seed(&password);
 
