@@ -11,7 +11,7 @@ use ethnum::U256;
 use serde::Deserialize;
 
 /// An EIP-1559 Ethereum transaction.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     /// The chain ID for the transaction.
@@ -53,9 +53,12 @@ pub struct Transaction {
 
 impl Transaction {
     // Sign with a wallet.
-    pub fn sign(&self, wallet: &crate::wallet::Wallet) -> Result<Signature> {
+    pub fn sign_with_wallet(&mut self, wallet: &crate::wallet::Wallet) -> Result<Vec<u8>> {
         let message = self.signing_message();
-        wallet.sign(message)
+        let signature = wallet.sign(message)?;
+        let encoded = self.encode(signature);
+
+        Ok(encoded)
     }
 
     /// Returns the RLP encoded transaction without signature.
