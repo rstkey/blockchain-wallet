@@ -1,8 +1,8 @@
-mod bip32;
-mod bip39;
-mod cryptography;
-mod keyring;
-mod keystore;
-mod transaction;
-mod utils;
-mod wallet;
+pub mod bip32;
+pub mod bip39;
+pub mod cryptography;
+pub mod keyring;
+pub mod keystore;
+pub mod transaction;
+pub mod utils;
+pub mod wallet;

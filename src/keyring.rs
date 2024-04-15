@@ -1,14 +1,10 @@
 use ethaddr::Address;
-use rand::{CryptoRng, Rng};
-use std::error::Error;
-use std::fmt;
-use std::{fs::File, path::Path};
+use std::path::Path;
 
 use crate::bip32::{hdk, path::Path as Bip32path};
-use crate::bip39::mnemonic::{self, Mnemonic, Seed};
+use crate::bip39::mnemonic::{Mnemonic, Seed};
 use crate::wallet::Wallet;
-use anyhow::{Ok, Result};
-use serde::ser::{Serialize, SerializeStruct, Serializer};
+use anyhow::{anyhow, Ok, Result};
 
 mod keyring_store;
 mod vault_data;
@@ -30,7 +26,6 @@ impl Keyring {
     pub fn new_from_mnemonic(mnemonic: &Mnemonic, password: Option<String>) -> Result<Self> {
         let password = password.unwrap_or_else(|| "".to_string());
         let seed = mnemonic.to_seed(&password);
-        // let root = hdk::derive(seed.as_ref(), &Path::for_index(0))?;
 
         Ok(Keyring {
             wallets: Vec::new(),
@@ -66,40 +61,32 @@ impl Keyring {
         self.wallets
             .iter()
             .find(|w| w.address() == *address)
-            .ok_or_else(|| HdKeyringError::AccountNotFound(address.to_string()).into())
+            .ok_or_else(|| anyhow!("Wallet not found"))
     }
 
-    pub fn export_to_file<P, R>(&self, path: P, rng: &mut R) -> Result<String>
+    pub fn export_to_file<P: AsRef<Path>>(&self, path: P) -> Result<String> {
+        let vault = vault_data::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
+        let filename =
+            keyring_store::encrypt(path, vault, self.password.clone().unwrap_or("".to_string()))?;
+        return Ok(filename);
+    }
+
+    pub fn import_from_file<P>(path: P, password: String) -> Result<Self>
     where
         P: AsRef<Path>,
-        R: Rng + CryptoRng,
     {
-        let vault = vault_data::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
-        todo!() // using keyring_store
+        let decrypted_data = keyring_store::decrypt(path, password.clone())?;
+        let vault: vault_data::VaultData = serde_json::from_slice(&decrypted_data)?;
+
+        let mnemonic = Mnemonic::from_phrase(&vault.mnemonic)?;
+        let seed = mnemonic.to_seed(password.clone());
+        let mut keyring = Keyring {
+            wallets: Vec::new(),
+            mnemonic,
+            seed,
+            password: Some(password.clone()),
+        };
+        keyring.add_accounts(vault.num_accounts)?;
+        Ok(keyring)
     }
 }
-
-#[derive(Debug)]
-enum HdKeyringError {
-    MnemonicAlreadyProvided,
-    NoMnemonicProvided,
-    EmptyOrigin,
-    AccountNotFound(String),
-}
-
-impl fmt::Display for HdKeyringError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            HdKeyringError::MnemonicAlreadyProvided => {
-                write!(f, "Secret recovery phrase already provided")
-            }
-            HdKeyringError::NoMnemonicProvided => write!(f, "No secret recovery phrase provided"),
-            HdKeyringError::EmptyOrigin => write!(f, "'origin' must be a non-empty string"),
-            HdKeyringError::AccountNotFound(address) => {
-                write!(f, "Address {} not found in this keyring", address)
-            }
-        }
-    }
-}
-
-impl Error for HdKeyringError {}

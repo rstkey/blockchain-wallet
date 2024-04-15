@@ -1,6 +1,5 @@
 use anyhow::Result;
 use ethaddr::Address;
-use serde::Serialize;
 use sha2::Sha256;
 use std::fmt::{self, Debug, Formatter};
 

@@ -31,12 +31,7 @@ const DEFAULT_KDF_PARAMS_LOG_N: u8 = 13u8;
 const DEFAULT_KDF_PARAMS_R: u32 = 8u32;
 const DEFAULT_KDF_PARAMS_P: u32 = 1u32;
 
-pub fn new<P, R, S>(
-    dir: P,
-    rng: &mut R,
-    password: S,
-    name: Option<&str>,
-) -> Result<(Vec<u8>, String), Error>
+pub fn new<P, R, S>(dir: P, rng: &mut R, password: S) -> Result<(Vec<u8>, String), Error>
 where
     P: AsRef<Path>,
     R: Rng + CryptoRng,
@@ -70,7 +65,8 @@ where
             salt,
         } => {
             let mut key = vec![0u8; dklen as usize];
-            pbkdf2::<Hmac<Sha256>>(password.as_ref(), &salt, c, key.as_mut_slice());
+            pbkdf2::<Hmac<Sha256>>(password.as_ref(), &salt, c, key.as_mut_slice())
+                .expect("invalid length of key");
             key
         }
         KdfparamsType::Scrypt {
