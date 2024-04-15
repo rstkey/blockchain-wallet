@@ -31,7 +31,13 @@
 [ ] refactor the mnemonics to be more readable. use entropy struct
 
 # MY choice regarding transaction
+
 - Reimplement so that it's compatible with alloy
 
 # The purpose of this project (blockchain wallet)
+
 Clef handles account creation, key management and signing transactions/data.
+
+# NOTES
+
+- metamask tidak menggunakan password untuk melakukan derivasi path
