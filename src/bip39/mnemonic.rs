@@ -44,9 +44,11 @@ const WORD_BITS: usize = WORD_MASK.count_ones() as _;
 
 impl Mnemonic {
     pub fn random(length: usize) -> Result<Self> {
+        // the length of mnemonic can only be 12, 15, 18, 21, or 24
         assert!(length % 3 == 0);
         assert!(length >= 12 && length <= 24);
 
+        // get entropy length given the mnemonic length. ie. 12 words = 128 bits
         let entropy_len = mnemonic_to_byte_length(length)?;
 
         let buffer = {

@@ -48,7 +48,7 @@ impl Wallet {
 
     /// Returns the public address for the private key.
     pub fn address(&self) -> Address {
-        let encoded = self.public_key_encoded_uncompressed();
+        let encoded: [u8; 65] = self.public_key_encoded_uncompressed();
 
         // Ethereum address is the last 20 bytes of the keccak hash of
         // the concatenated elliptic curve coordinates of the public key. Note

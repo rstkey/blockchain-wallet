@@ -3,9 +3,9 @@
 Modul bip32 - skema hierarkis deterministik untuk key derivation (BIP-32) menggunakan beberapa algoritme kriptografi, antara lain:
 
 1. **HMAC (Hash-based Message Authentication Code)**: HMAC menggunakan fungsi hash **SHA-512** untuk melakukan komputasi kunci anak (child key) dari kunci induk (master key) dan kode rantai (chain code). Ini dilakukan pada fungsi derive_slice(), saat melakukan iterasi untuk setiap komponen pada path derivasi.
-2. **Kurva Eliptik K256**: Modul ini menggunakan library k256 untuk operasi pada kunci rahasia (secret key) dan kunci publik (public key) yang direpresentasikan dalam bentuk kurva eliptik. Ini digunakan saat melakukan komputasi kunci anak.
+2. **Kurva Eliptik K256**: Modul ini menggunakan library k256 untuk operasi pada kunci rahasia (secret key) dan kunci publik (public key) yang direpresentasikan dalam bentuk kurva eliptik. Ini digunakan saat melakukan komputasi child key.
 
-Dari analisis kode, dapat disimpulkan bahwa modul hdk.rs menggunakan HMAC dengan fungsi hash SHA-512 untuk komputasi kunci anak, serta operasi pada kurva eliptik K256 untuk manipulasi kunci rahasia dan publik selama proses derivasi.
+Disini digunakan HMAC dengan fungsi hash SHA-512 untuk komputasi kunci anak, serta operasi pada kurva eliptik K256 untuk melakukan proses derivasi.
 
 ### HMAC
 

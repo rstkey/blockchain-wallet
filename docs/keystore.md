@@ -1,11 +1,11 @@
 # Keystore (Web3 Secret Storage Definition)
 
-Algoritma kriptografi digunakan pada beberapa bagian dalam proses export/import keystore file.
+Menyediakan fungsi untuk export akun ke format web3 secret storage (keystore file). Algoritma kriptografi digunakan pada beberapa bagian dalam proses export/import keystore file.
 
 ### Enkripsi Kunci Privat:
 
 1. Algoritma AES-128-CTR digunakan untuk mengenkripsi kunci privat sebelum disimpan dalam keystore.
-2. Kunci enkripsi diperoleh melalui algoritma Scrypt dengan parameter default yang ditentukan (log_n=13, r=8, p=1).
+2. Kunci enkripsi diperoleh secara default menggunakan algoritma Scrypt dengan parameter default yang ditentukan (log_n=13, r=8, p=1). Pilihan lain menggunakan algoritma PBKDF2.
 3. Sebuah vektor inisialisasi (IV) acak juga dibuat menggunakan fungsi acak (StdRNG).
 4. Setelah proses enkripsi, MAC (Message Authentication Code) dihitung menggunakan algoritma Keccak-256.
 
