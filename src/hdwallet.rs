@@ -9,14 +9,14 @@ use anyhow::{anyhow, Ok, Result};
 mod keyring_store;
 mod vault_data;
 
-pub struct Keyring {
+pub struct HDWallet {
     wallets: Vec<Wallet>,
     mnemonic: Mnemonic,
     seed: Seed,
     password: Option<String>,
 }
 
-impl Keyring {
+impl HDWallet {
     pub fn new_random(password: Option<String>) -> Result<Self> {
         let mnemonic = Mnemonic::random(12).expect("Failed to generate mnemonic");
         Self::new_from_mnemonic(&mnemonic, password)
@@ -31,7 +31,7 @@ impl Keyring {
         let password = password.unwrap_or_else(|| "".to_string());
         let seed = mnemonic.to_seed(&password);
 
-        Ok(Keyring {
+        Ok(HDWallet {
             wallets: Vec::new(),
             mnemonic: mnemonic.clone(),
             seed: seed,
@@ -68,23 +68,26 @@ impl Keyring {
             .ok_or_else(|| anyhow!("Wallet not found"))
     }
 
-    pub fn export_to_file<P: AsRef<Path>>(&self, path: P) -> Result<String> {
+    pub fn export<P: AsRef<Path>>(&self, path: P) -> Result<String> {
         let vault = vault_data::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
-        let filename =
-            keyring_store::encrypt(path, vault, self.password.clone().unwrap_or("".to_string()))?;
+        let filename = keyring_store::encrypt_to_file(
+            path,
+            vault,
+            self.password.clone().unwrap_or("".to_string()),
+        )?;
         return Ok(filename);
     }
 
-    pub fn import_from_file<P>(path: P, password: String) -> Result<Self>
+    pub fn import<P>(path: P, password: String) -> Result<Self>
     where
         P: AsRef<Path>,
     {
-        let decrypted_data = keyring_store::decrypt(path, password.clone())?;
+        let decrypted_data = keyring_store::decrypt_file(path, password.clone())?;
         let vault: vault_data::VaultData = serde_json::from_slice(&decrypted_data)?;
 
         let mnemonic = Mnemonic::from_phrase(&vault.mnemonic)?;
         let seed = mnemonic.to_seed(password.clone());
-        let mut keyring = Keyring {
+        let mut keyring = HDWallet {
             wallets: Vec::new(),
             mnemonic,
             seed,

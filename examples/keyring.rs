@@ -1,14 +1,14 @@
 extern crate crypto_wallet;
 use std::fs::read_to_string;
 
-use crypto_wallet::keyring;
+use crypto_wallet::hdwallet;
 use tempfile::tempdir;
 
 pub fn main() {
     let mnemonic = "lend pole exclude donkey range tank gather space dress topic fantasy siege";
     let password = "";
     let mut keyring =
-        keyring::Keyring::new_from_mnemonic_phrase(&mnemonic, Some(password.to_string()))
+        hdwallet::HDWallet::new_from_mnemonic_phrase(&mnemonic, Some(password.to_string()))
             .expect("failed to create keyring");
 
     let expected = [
@@ -37,12 +37,10 @@ pub fn main() {
 
     // Test encrypt to vault
     let dir = tempdir().expect("failed to create tempdir");
-    let filename = keyring
-        .export_to_file(&dir)
-        .expect("failed to export to file");
+    let filename = keyring.export(&dir).expect("failed to export to file");
     let file_path = dir.path().join(filename);
 
-    let recovered = keyring::Keyring::import_from_file(file_path.clone(), password.to_string())
+    let recovered = hdwallet::HDWallet::import(file_path.clone(), password.to_string())
         .expect("failed to import from file");
 
     // make sure the addresses are the same

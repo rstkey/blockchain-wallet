@@ -30,20 +30,6 @@ const DEFAULT_KDF_PARAMS_LOG_N: u8 = 13u8;
 const DEFAULT_KDF_PARAMS_R: u32 = 8u32;
 const DEFAULT_KDF_PARAMS_P: u32 = 1u32;
 
-// pub fn new<P, S>(dir: P, password: S) -> Result<(Vec<u8>, String), Error>
-// where
-//     P: AsRef<Path>,
-//     S: AsRef<[u8]>,
-// {
-//     // Generate a random private key.
-//     // let mut pk = vec![0u8; DEFAULT_KEY_SIZE];
-//     // rng.fill_bytes(pk.as_mut_slice());
-//     let pk = utils::generate_salt(DEFAULT_KEY_SIZE);
-
-//     let name = encrypt_key(dir, &pk, password)?;
-//     Ok((pk, name))
-// }
-
 pub fn decrypt_key<P, S>(path: P, password: S) -> Result<Vec<u8>, Error>
 where
     P: AsRef<Path>,

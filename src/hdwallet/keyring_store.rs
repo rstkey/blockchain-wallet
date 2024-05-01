@@ -31,7 +31,8 @@ struct KeyDerivationOptions {
     iterations: u32,
 }
 
-pub fn encrypt<P, S, T>(dir: P, data: T, password: S) -> Result<String>
+// Encrypts the given data and writes it to a file.
+pub fn encrypt_to_file<P, S, T>(dir: P, data: T, password: S) -> Result<String>
 where
     P: AsRef<Path>,
     S: AsRef<[u8]>,
@@ -63,7 +64,8 @@ where
     Ok(filename)
 }
 
-pub fn decrypt<P, S>(path: P, password: S) -> Result<Vec<u8>>
+// Decrypts the data from the given file.
+pub fn decrypt_file<P, S>(path: P, password: S) -> Result<Vec<u8>>
 where
     P: AsRef<Path>,
     S: AsRef<[u8]>,
@@ -83,12 +85,14 @@ where
     decrypt_data(&key, &ciphertext, &nonce)
 }
 
+// Derives a key from the given password and salt using PBKDF2.
 fn derive_key(password: &[u8], salt: &[u8], iterations: u32) -> Result<Vec<u8>> {
     let mut key = vec![0u8; DEFAULT_KEY_SIZE];
     pbkdf2::<Hmac<Sha256>>(password, salt, iterations, key.as_mut_slice())?;
     Ok(key)
 }
 
+// Encrypts the given plaintext using the provided key.
 fn encrypt_data(key: &[u8], plaintext: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     let key: &Key<Aes256Gcm> = key.into();
     let cipher = Aes256Gcm::new(&key);
@@ -99,6 +103,7 @@ fn encrypt_data(key: &[u8], plaintext: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     Ok((encrypted_data, nonce.to_vec()))
 }
 
+// Decrypts the given encrypted data using the provided key and nonce.
 pub fn decrypt_data(key: &[u8], encrypted_data: &[u8], nonce: &[u8]) -> Result<Vec<u8>> {
     let key: &Key<Aes256Gcm> = key.into();
     let cipher = Aes256Gcm::new(&key);
