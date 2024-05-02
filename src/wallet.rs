@@ -1,3 +1,4 @@
+use alloy::primitives::Address as AnvilAddress;
 use anyhow::Result;
 use ethaddr::Address;
 use sha2::Sha256;
@@ -60,6 +61,10 @@ impl Wallet {
         let hash = utils::hash::keccak256(&encoded[1..]);
 
         Address::from_slice(&hash[12..])
+    }
+
+    pub fn anvil_address(&self) -> AnvilAddress {
+        AnvilAddress::from_slice(self.address().as_slice())
     }
 
     /// Returns the private key's 32 byte secret.
