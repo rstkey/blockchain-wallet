@@ -85,8 +85,11 @@ impl HDWallet {
     where
         P: AsRef<Path>,
     {
-        let decrypted_data = vault::decrypt_file(path, password.clone())?;
-        let vault: vault::VaultData = serde_json::from_slice(&decrypted_data)?;
+        let decrypted_data =
+            vault::decrypt_file(path, password.clone()).expect("Failed to decrypt");
+
+        let vault: vault::VaultData =
+            serde_json::from_slice(&decrypted_data).expect("Failed to parse");
 
         let mnemonic = Mnemonic::from_phrase(&vault.mnemonic)?;
         let seed = mnemonic.to_seed(password.clone());

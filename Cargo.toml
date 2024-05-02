@@ -37,3 +37,4 @@ alloy = { git = "https://github.com/alloy-rs/alloy", features = [
     "node-bindings",
 ] }
 tokio = { version = "1", features = ["full"] }
+speck-cipher = { path = "../speck-cipher" }

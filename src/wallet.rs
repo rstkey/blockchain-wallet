@@ -119,7 +119,6 @@ mod tests {
     #[test]
     fn deterministic_address() {
         let key = Wallet::from_secret(PRIVATE_KEY).unwrap();
-        println!("{:?}", key);
         assert_eq!(
             *key.address(),
             hex!("90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"),

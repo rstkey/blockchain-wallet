@@ -25,7 +25,7 @@ impl VaultData {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct EncryptionResult {
     data: String,
@@ -33,20 +33,20 @@ struct EncryptionResult {
     key_metadata: KeyDerivationMetadata,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct KeyDerivationMetadata {
     salt: String,
     algorithm: String,
     iterations: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct EncryptionMetadata {
     iv_or_nonce: Vec<u8>,
     algorithm: EncryptionOptions,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum EncryptionOptions {
     Aes256Gcm,
     SpeckCBC,
@@ -75,7 +75,9 @@ where
     let plaintext = serde_json::to_vec(&data)?;
     let (ciphertext, nonce) = match algorithm {
         EncryptionOptions::Aes256Gcm => self::algorithm::encrypt_aes_gcm(&key, &plaintext)?,
-        EncryptionOptions::SpeckCBC => self::algorithm::encrypt_speck_cbc(&key, &plaintext)?,
+        EncryptionOptions::SpeckCBC => {
+            self::algorithm::encrypt_speck_cbc(&key.try_into().unwrap(), &plaintext)?
+        }
     };
 
     let result = EncryptionResult {
@@ -129,8 +131,10 @@ where
     // Decrypt the data
     match result.encryption_options.algorithm {
         EncryptionOptions::Aes256Gcm => self::algorithm::decrypt_aes_gcm(&key, &ciphertext, &nonce),
-        EncryptionOptions::SpeckCBC => {
-            self::algorithm::decrypt_speck_cbc(&key, &ciphertext, &nonce)
-        }
+        EncryptionOptions::SpeckCBC => self::algorithm::decrypt_speck_cbc(
+            &key.try_into().unwrap(),
+            &ciphertext,
+            &nonce.try_into().unwrap(),
+        ),
     }
 }
