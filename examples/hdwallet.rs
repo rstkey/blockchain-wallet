@@ -1,7 +1,7 @@
 extern crate crypto_wallet;
 use std::fs::read_to_string;
 
-use crypto_wallet::hdwallet;
+use crypto_wallet::{hdwallet, vault};
 use tempfile::tempdir;
 
 pub fn main() {
@@ -37,7 +37,9 @@ pub fn main() {
 
     // Test encrypt to vault
     let dir = tempdir().expect("failed to create tempdir");
-    let filename = keyring.export(&dir).expect("failed to export to file");
+    let filename = keyring
+        .export(&dir, vault::EncryptionOptions::Aes256Gcm)
+        .expect("failed to export to file");
     let file_path = dir.path().join(filename);
 
     let recovered = hdwallet::HDWallet::import(file_path.clone(), password.to_string())

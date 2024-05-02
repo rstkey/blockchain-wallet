@@ -1,11 +1,14 @@
 use anyhow::Result;
 use ethereum_types::H160 as Address;
+use hmac::Hmac;
 use k256::elliptic_curve::sec1::ToEncodedPoint;
 use k256::SecretKey;
+use pbkdf2::pbkdf2;
 use rand::rngs::StdRng;
 use rand::RngCore;
 use rand::SeedableRng;
-use std::io; // For the fill_bytes method
+use sha2::Sha256;
+use std::io;
 
 pub mod hash;
 pub mod serialization;
@@ -45,4 +48,11 @@ where
     debug_assert_eq!(public_key[0], 0x04);
     let hash = hash::keccak256(&public_key[1..]);
     Ok(Address::from_slice(&hash[12..]))
+}
+
+// Derives a key from the given password and salt using PBKDF2.
+pub fn pbkdf2_hash(password: &[u8], salt: &[u8], iterations: u32, size: usize) -> Result<Vec<u8>> {
+    let mut key = vec![0u8; size];
+    pbkdf2::<Hmac<Sha256>>(password, salt, iterations, key.as_mut_slice())?;
+    Ok(key)
 }

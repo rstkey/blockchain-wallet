@@ -3,11 +3,9 @@ use std::path::Path;
 
 use crate::bip32::{hdk, path::Path as Bip32path};
 use crate::bip39::mnemonic::{Mnemonic, Seed};
+use crate::vault;
 use crate::wallet::Wallet;
 use anyhow::{anyhow, Ok, Result};
-
-mod keyring_store;
-mod vault_data;
 
 pub struct HDWallet {
     wallets: Vec<Wallet>,
@@ -68,12 +66,17 @@ impl HDWallet {
             .ok_or_else(|| anyhow!("Wallet not found"))
     }
 
-    pub fn export<P: AsRef<Path>>(&self, path: P) -> Result<String> {
-        let vault = vault_data::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
-        let filename = keyring_store::encrypt_to_file(
+    pub fn export<P: AsRef<Path>>(
+        &self,
+        path: P,
+        algorithm: vault::EncryptionOptions,
+    ) -> Result<String> {
+        let vault = vault::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
+        let filename = vault::encrypt_to_file(
             path,
             vault,
             self.password.clone().unwrap_or("".to_string()),
+            algorithm,
         )?;
         return Ok(filename);
     }
@@ -82,8 +85,8 @@ impl HDWallet {
     where
         P: AsRef<Path>,
     {
-        let decrypted_data = keyring_store::decrypt_file(path, password.clone())?;
-        let vault: vault_data::VaultData = serde_json::from_slice(&decrypted_data)?;
+        let decrypted_data = vault::decrypt_file(path, password.clone())?;
+        let vault: vault::VaultData = serde_json::from_slice(&decrypted_data)?;
 
         let mnemonic = Mnemonic::from_phrase(&vault.mnemonic)?;
         let seed = mnemonic.to_seed(password.clone());
