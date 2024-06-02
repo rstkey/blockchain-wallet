@@ -30,6 +30,14 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 cargo run --example <example_name>
 ```
 
+## Run the Tests
+
+To run the tests, you can use the following command:
+
+```bash
+cargo test
+```
+
 ## Documentation
 
 - [Wallet](docs/wallet.md)

@@ -15,9 +15,8 @@ async fn main() -> Result<()> {
         .try_spawn()
         .expect("Failed to spawn Anvil");
 
-    let provider = ProviderBuilder::new()
-        .on_http(anvil.endpoint_url())
-        .expect("Failed to build provider");
+    println!("Creating provider with endpoint: {}", anvil.endpoint_url());
+    let provider = ProviderBuilder::new().on_http(anvil.endpoint_url());
 
     // Create two wallets
     let wallet_a = Wallet::from_secret(hex!(
@@ -26,9 +25,14 @@ async fn main() -> Result<()> {
     .unwrap();
     let wallet_b = Wallet::from_secret(anvil.keys()[0].to_bytes()).unwrap();
 
+    println!("\nCreated two wallets successfully!");
+    println!("Wallet A address: {}", wallet_a.anvil_address());
+    println!("Wallet B address: {}", wallet_b.anvil_address());
+
     // check both balance
-    let balance_a = provider.get_balance(wallet_a.anvil_address(), None).await?;
-    let balance_b = provider.get_balance(wallet_b.anvil_address(), None).await?;
+    let balance_a = provider.get_balance(wallet_a.anvil_address()).await?;
+    let balance_b = provider.get_balance(wallet_b.anvil_address()).await?;
+    println!("Checking balance...");
     println!("Balance A: {}\nBalance B: {}", balance_a, balance_b);
 
     let mut transaction = Transaction {
@@ -42,18 +46,25 @@ async fn main() -> Result<()> {
         ..Default::default()
     };
 
+    println!("\nCreating transaction...");
+    println!("Transaction: {:?}", transaction);
+
     let payload = transaction.sign_with_wallet(&wallet_b).unwrap();
+    println!("\nSigning transaction...");
+    println!("Signed Transaction Payload: {:?}", hex::encode(&payload));
 
     let receipt = provider
         .send_raw_transaction(&payload)
         .await?
         .get_receipt()
         .await?;
+    println!("\nTransaction sent successfully!");
     println!("Transaction hash: {:?}", receipt.transaction_hash);
 
     // check both balance
-    let balance_a = provider.get_balance(wallet_a.anvil_address(), None).await?;
-    let balance_b = provider.get_balance(wallet_b.anvil_address(), None).await?;
+    let balance_a = provider.get_balance(wallet_a.anvil_address()).await?;
+    let balance_b = provider.get_balance(wallet_b.anvil_address()).await?;
+    println!("\nChecking balance...");
     println!("Balance A: {}\nBalance B: {}", balance_a, balance_b);
 
     Ok(())

@@ -219,19 +219,19 @@ impl Deref for Seed {
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////
 
-/// Converts a mnemonic length to a byte length.
-///
-/// This function is used to calculate the byte length of the entropy given the length of the mnemonic phrase.
-/// It follows the formula specified in the BIP-0039 specification for generating mnemonics for a Bitcoin wallet.
-///
-/// NOTE: Derived from the BIP-0039 spec where `CS` is the checksum bit
-/// length, `ENT` is the entropy bit length (so `8 * byte_length`) and `MS`
-/// is the mnemonic word length.
-/// ```
-/// CS = ENT / 32
-/// MS = (ENT + CS) / 11
-/// ```
-/// <https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki#generating-the-mnemonic>
+// Converts a mnemonic length to a byte length.
+//
+// This function is used to calculate the byte length of the entropy given the length of the mnemonic phrase.
+// It follows the formula specified in the BIP-0039 specification for generating mnemonics for a Bitcoin wallet.
+//
+// NOTE: Derived from the BIP-0039 spec where `CS` is the checksum bit
+// length, `ENT` is the entropy bit length (so `8 * byte_length`) and `MS`
+// is the mnemonic word length.
+// ```
+// CS = ENT / 32
+// MS = (ENT + CS) / 11
+// ```
+// <https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki#generating-the-mnemonic>
 fn mnemonic_to_byte_length(len: usize) -> Result<usize> {
     ensure!(matches!(len, 12..=24), "invalid mnemonic length {len}");
 
