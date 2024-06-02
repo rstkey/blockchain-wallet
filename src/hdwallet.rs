@@ -1,9 +1,7 @@
 use ethaddr::Address;
-use std::path::Path;
 
 use crate::bip32::{hdk, path::Path as Bip32path};
 use crate::bip39::mnemonic::{Mnemonic, Seed};
-use crate::vault;
 use crate::wallet::Wallet;
 use anyhow::{anyhow, Ok, Result};
 
@@ -11,7 +9,6 @@ pub struct HDWallet {
     wallets: Vec<Wallet>,
     mnemonic: Mnemonic,
     seed: Seed,
-    password: Option<String>,
 }
 
 impl HDWallet {
@@ -33,7 +30,6 @@ impl HDWallet {
             wallets: Vec::new(),
             mnemonic: mnemonic.clone(),
             seed: seed,
-            password: Some(password),
         })
     }
 
@@ -66,40 +62,7 @@ impl HDWallet {
             .ok_or_else(|| anyhow!("Wallet not found"))
     }
 
-    pub fn export<P: AsRef<Path>>(
-        &self,
-        path: P,
-        algorithm: vault::EncryptionOptions,
-    ) -> Result<String> {
-        let vault = vault::VaultData::new(self.mnemonic.to_phrase(), self.wallets.len());
-        let filename = vault::encrypt_to_file(
-            path,
-            vault,
-            self.password.clone().unwrap_or("".to_string()),
-            algorithm,
-        )?;
-        return Ok(filename);
-    }
-
-    pub fn import<P>(path: P, password: String) -> Result<Self>
-    where
-        P: AsRef<Path>,
-    {
-        let decrypted_data =
-            vault::decrypt_file(path, password.clone()).expect("Failed to decrypt");
-
-        let vault: vault::VaultData =
-            serde_json::from_slice(&decrypted_data).expect("Failed to parse");
-
-        let mnemonic = Mnemonic::from_phrase(&vault.mnemonic)?;
-        let seed = mnemonic.to_seed(password.clone());
-        let mut keyring = HDWallet {
-            wallets: Vec::new(),
-            mnemonic,
-            seed,
-            password: Some(password.clone()),
-        };
-        keyring.add_accounts(vault.num_accounts)?;
-        Ok(keyring)
+    pub fn get_mnemonic(&self) -> &Mnemonic {
+        &self.mnemonic
     }
 }

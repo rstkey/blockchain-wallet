@@ -3,6 +3,7 @@
 
 pub mod accesslist;
 mod rlp;
+
 use crate::utils::hash;
 use crate::{transaction::accesslist::AccessList, utils::serialization, wallet::Signature};
 use anyhow::Result;
@@ -54,20 +55,20 @@ pub struct Transaction {
 impl Transaction {
     // Sign with a wallet.
     pub fn sign_with_wallet(&mut self, wallet: &crate::wallet::Wallet) -> Result<Vec<u8>> {
-        let message = self.signing_message();
+        let message = self.get_unsigned_rlp_encoded();
         let signature = wallet.sign(message)?;
-        let encoded = self.encode(signature);
+        let encoded = self.get_signed_rlp_encoded(signature);
 
         Ok(encoded)
     }
 
     /// Returns the RLP encoded transaction without signature.
-    pub fn signing_message(&self) -> [u8; 32] {
+    pub fn get_unsigned_rlp_encoded(&self) -> [u8; 32] {
         hash::keccak256(self.rlp_encode(None))
     }
 
     /// Returns 32-byte message used for signing.
-    pub fn encode(&self, signature: Signature) -> Vec<u8> {
+    pub fn get_signed_rlp_encoded(&self, signature: Signature) -> Vec<u8> {
         self.rlp_encode(Some(signature))
     }
 
@@ -119,8 +120,8 @@ mod tests {
     fn sign_encode(tx: Value) -> Vec<u8> {
         let tx = serde_json::from_value::<Transaction>(tx).unwrap();
         let wallet = Wallet::from_secret(DETERMINISTIC_PRIVATE_KEY).unwrap();
-        let signature = wallet.sign(tx.signing_message()).unwrap();
-        tx.encode(signature)
+        let signature = wallet.sign(tx.get_unsigned_rlp_encoded()).unwrap();
+        tx.get_signed_rlp_encoded(signature)
     }
 
     #[test]

@@ -18,7 +18,7 @@ pub fn get_rng() -> StdRng {
 }
 
 /// Populates the provided slice with cryptographically strong random bytes.
-pub fn get_random_bytes(mut buf: impl AsMut<[u8]>) -> io::Result<()> {
+pub fn fill_random_bytes(mut buf: impl AsMut<[u8]>) -> io::Result<()> {
     let mut rng = get_rng();
     rng.fill_bytes(buf.as_mut());
 
@@ -30,7 +30,7 @@ pub fn get_random_bytes(mut buf: impl AsMut<[u8]>) -> io::Result<()> {
 
 pub fn generate_salt(size: usize) -> Vec<u8> {
     let mut salt = vec![0u8; size];
-    get_random_bytes(&mut salt).expect("Failed to generate salt");
+    fill_random_bytes(&mut salt).expect("Failed to generate salt");
     salt
 }
 

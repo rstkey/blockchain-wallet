@@ -1,23 +1,21 @@
+mod signature;
+
+use crate::utils;
 use alloy::primitives::Address as AnvilAddress;
 use anyhow::Result;
 use ethaddr::Address;
-use sha2::Sha256;
-use std::fmt::{self, Debug, Formatter};
-
-// secp256k1 elliptic curve library with support for ECDSA signing/verification/public-key recovery
 use k256::{
     ecdsa::{hazmat::SignPrimitive, SigningKey},
     elliptic_curve::sec1::ToEncodedPoint as _,
     PublicKey, SecretKey,
 };
-
-use std::path::Path;
-
-use crate::utils;
-mod signature;
+use sha2::Sha256;
 pub use signature::Signature;
+use std::{
+    fmt::{self, Debug, Formatter},
+    path::Path,
+};
 
-/// Represents an Ethereum private key.
 pub struct Wallet(SecretKey);
 
 impl Wallet {

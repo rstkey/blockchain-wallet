@@ -55,7 +55,7 @@ impl Mnemonic {
             let mut buf = [0; 64];
             let (seed, hash) = buf.split_at_mut(entropy_len);
 
-            utils::get_random_bytes(&mut *seed)?;
+            utils::fill_random_bytes(&mut *seed)?;
             hash[..32].copy_from_slice(&sha256(seed));
 
             buf

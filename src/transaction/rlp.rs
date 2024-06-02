@@ -1,5 +1,3 @@
-//! Tiny (and inefficient) RLP encoding implementation.
-
 use ethnum::U256;
 
 /// RLP encode a list.
