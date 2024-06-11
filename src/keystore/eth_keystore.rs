@@ -3,9 +3,9 @@ use hex::{FromHex, ToHex};
 use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
 /// This struct represents the deserialized form of an encrypted JSON keystore based on the
 /// [Web3 Secret Storage Definition](https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition).
+#[derive(Debug, Deserialize, Serialize)]
 pub struct EthKeystore {
     pub address: Address,
     pub crypto: CryptoJson,
@@ -13,8 +13,8 @@ pub struct EthKeystore {
     pub version: u8,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
 /// Represents the "crypto" part of an encrypted JSON keystore.
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CryptoJson {
     pub cipher: String,
     pub cipherparams: CipherparamsJson,
@@ -26,24 +26,24 @@ pub struct CryptoJson {
     pub mac: Vec<u8>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
 /// Represents the "cipherparams" part of an encrypted JSON keystore.
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CipherparamsJson {
     #[serde(serialize_with = "buffer_to_hex", deserialize_with = "hex_to_buffer")]
     pub iv: Vec<u8>,
 }
 
+/// Types of key derivition functions supported by the Web3 Secret Storage.
 #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-/// Types of key derivition functions supported by the Web3 Secret Storage.
 pub enum KdfType {
     Pbkdf2,
     Scrypt,
 }
 
+/// Defines the various parameters used in the supported KDFs.
 #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
-/// Defines the various parameters used in the supported KDFs.
 pub enum KdfparamsType {
     Pbkdf2 {
         c: u32,
